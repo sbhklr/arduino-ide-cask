@@ -16,12 +16,12 @@ helpFunction()
 {
    echo ""
    echo "Usage: $0 <DMG path or URL> <flags>"
-   echo -e "\t-n Create a nightly build cask"
-   echo -e "\t-i Install the app locally"
-   echo -e "\t-l Launch app after installation"
-   echo -e "\t-t Test the cask"
-   echo -e "\t-p Publish the cask by pushing it to Github"   
-   echo -e "\t-h Print this help message"
+   echo -e "\t-n --nightly Create a nightly build cask"
+   echo -e "\t-i --install Install the app locally"
+   echo -e "\t-l --launch Launch app after installation"
+   echo -e "\t-t --test Test the cask"
+   echo -e "\t-p --publish Publish the cask by pushing it to Github"   
+   echo -e "\t-h --help Print this help message"
    exit 1 # Exit script after printing help
 }
 
@@ -30,6 +30,7 @@ if [ -z "$1" ]; then
 fi
 
 installation_file=$1
+shift
 
 for arg in "$@"
 do
@@ -58,8 +59,10 @@ do
         helpFunction
         shift
         ;;
-        *)                
-        shift
+        *)   
+        echo "Unknown flag $arg"
+        helpFunction      
+        exit
         ;;
     esac
 done
