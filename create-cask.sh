@@ -15,13 +15,12 @@ host_path="https://downloads.arduino.cc/arduino-pro-ide"
 helpFunction()
 {
    echo ""
-   echo "Usage: $0 <DMG path or URL> <flags>"
-   echo -e "\t-n --nightly Create a nightly build cask"
-   echo -e "\t-i --install Install the app locally"
-   echo -e "\t-l --launch Launch app after installation"
-   echo -e "\t-t --test Test the cask"
-   echo -e "\t-p --publish Publish the cask by pushing it to Github"   
-   echo -e "\t-h --help Print this help message"
+   echo "Usage: $0 <DMG path or URL> <flags>"   
+   echo -e "\t-i --install \t Install the app locally"
+   echo -e "\t-l --launch \t Launch app after installation"
+   echo -e "\t-t --test \t Test the cask"
+   echo -e "\t-p --publish \t Publish the cask by pushing it to Github"   
+   echo -e "\t-h --help \t Print this help message"
    exit 1 # Exit script after printing help
 }
 
@@ -34,11 +33,7 @@ shift
 
 for arg in "$@"
 do
-    case $arg in
-        -n|--nightly)
-        IS_NIGHTLY_BUILD=1
-        shift
-        ;;
+    case $arg in        
         -i|--install)
         SHOULD_INSTALL=1
         shift
@@ -85,21 +80,8 @@ fi
 
 if [ ! -f  $image_path ]
 then
-  echo "💀 Target image not found at $image_path"
+  echo "❌ Target image not found at $image_path"
   exit 2
-fi
-
-
-# Nightly Build Config
-
-if [[ $IS_NIGHTLY_BUILD == 1 ]] ;then
-	echo "📣 Creating a nightly build cask..."
-	homebrew_repository="homebrew-cask-versions"
-	cask_name="$cask_name-nightly"
-  host_path="$host_path/nightly"
-else	
-  echo "📣 Creating a stable release cask..."
-	homebrew_repository="homebrew-cask"
 fi
 
 
@@ -121,18 +103,32 @@ hdiutil detach $mount_point -quiet
 checksum=($(shasum -a 256 "$image_path"))
 echo "👀 SHA 256 Checksum: $checksum"
 
-cask_file_name="$cask_name.rb"
-cask_path="$(brew --repository)/Library/Taps/homebrew/homebrew-cask/Casks/$cask_file_name"
 
-if ! curl --output /dev/null --silent --head --fail "$host_path/$image_name"; then
-  echo "💀 Resource at $host_path/$image_name not available."
-  exit 3
+# Nightly Build Config
+
+if [[ "$app_version" == *"nightly"* ]]; then
+  echo "📣 Creating a nightly build cask..."
+  homebrew_repository="homebrew-cask-versions"
+  cask_name="$cask_name-nightly"
+  host_path="$host_path/nightly"
+else  
+  echo "📣 Creating a stable release cask..."
+  homebrew_repository="homebrew-cask"
 fi
 
 
 # Generate Cask File
 
-printf "📦 Generating cask file $cask_file_name ...\n\n"
+cask_file_name="$cask_name.rb"
+printf "📦 Generating cask file $cask_file_name at $(pwd) ...\n\n"
+
+cask_directory="$(brew --repository)/Library/Taps/homebrew/homebrew-cask/Casks"
+cask_path="$cask_directory/$cask_file_name"
+
+if ! curl --output /dev/null --silent --head -L --fail "$host_path/$image_name"; then
+  echo "❌ Resource at $host_path/$image_name not available."
+  exit 3
+fi
 
 if [ -f  $cask_file_name ]
 then
@@ -155,6 +151,12 @@ EOF
 
 cat $cask_file_name
 printf "\n"
+
+if [ ! -d  $cask_directory ]
+then
+  echo "❌ No cask directory found at $cask_directory"
+  exit 4
+fi
 
 if [ -f  $cask_path ]
 then
@@ -209,4 +211,4 @@ if [[ $SHOULD_LAUNCH == 1 ]] ;then
 fi
 
 
-echo "✅ Done"
+echo "✅ Cask '$cask_name' generated"
