@@ -18,8 +18,9 @@ helpFunction()
    echo "Usage: $0 <DMG path or URL> <flags>"
    echo -e "\t-n Create a nightly build cask"
    echo -e "\t-i Install the app locally"
+   echo -e "\t-l Launch app after installation"
    echo -e "\t-t Test the cask"
-   echo -e "\t-p Publish the cask by pushing it to Github"
+   echo -e "\t-p Publish the cask by pushing it to Github"   
    echo -e "\t-h Print this help message"
    exit 1 # Exit script after printing help
 }
@@ -39,6 +40,10 @@ do
         ;;
         -i|--install)
         SHOULD_INSTALL=1
+        shift
+        ;;
+        -l|--launch)
+        SHOULD_LAUNCH=1
         shift
         ;;
         -t|--test)
@@ -77,7 +82,7 @@ fi
 
 if [ ! -f  $image_path ]
 then
-  echo "☠️ Target image not found at $image_path"
+  echo "💀 Target image not found at $image_path"
   exit 2
 fi
 
@@ -85,11 +90,12 @@ fi
 # Nightly Build Config
 
 if [[ $IS_NIGHTLY_BUILD == 1 ]] ;then
-	echo "Creating a nightly build cask..."
+	echo "📣 Creating a nightly build cask..."
 	homebrew_repository="homebrew-cask-versions"
 	cask_name="$cask_name-nightly"
   host_path="$host_path/nightly"
 else	
+  echo "📣 Creating a stable release cask..."
 	homebrew_repository="homebrew-cask"
 fi
 
@@ -116,7 +122,7 @@ cask_file_name="$cask_name.rb"
 cask_path="$(brew --repository)/Library/Taps/homebrew/homebrew-cask/Casks/$cask_file_name"
 
 if ! curl --output /dev/null --silent --head --fail "$host_path/$image_name"; then
-  echo "☠️ Resource at $host_path/$image_name not available."
+  echo "💀 Resource at $host_path/$image_name not available."
   exit 3
 fi
 
@@ -191,5 +197,13 @@ if [[ $SHOULD_PUBLISH == 1 ]] ;then
     git checkout master
     open "https://github.com/Homebrew/$homebrew_repository/compare/master...arduino:$branch_name"
 fi
+
+
+# Launch app
+
+if [[ $SHOULD_LAUNCH == 1 ]] ;then
+  open -a "$app_name"
+fi
+
 
 echo "✅ Done"
